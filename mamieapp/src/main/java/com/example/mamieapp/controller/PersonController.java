@@ -1,5 +1,7 @@
 package com.example.mamieapp.controller;
 
+
+import com.example.mamieapp.Exeception.PersonNotFoundException;
 import com.example.mamieapp.Person;
 import com.example.mamieapp.Repository.PersonRepository;
 import org.springframework.http.HttpStatus;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+
 
 @RestController
 @RequestMapping("/api/persons")
@@ -28,12 +31,16 @@ public class PersonController {
     @PostMapping
     public ResponseEntity<Person> createPerson(@RequestBody Person person) {
         Person newPerson = personRepository.save(person);
-        return new ResponseEntity<>(newPerson, HttpStatus.CREATED);
+        if(person.getName().length()>2){
+            return new ResponseEntity<>(newPerson, HttpStatus.CREATED);
+        } else throw new IllegalArgumentException("nom trop court");
     }
     @GetMapping("/{id}")
     public ResponseEntity<Person> getPersonById(@PathVariable Long id) {
         Optional<Person> person = personRepository.findById(id);
-            return person.map(value -> new ResponseEntity<>(person.get(), HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+            return person.map(value -> new ResponseEntity<>(person.get(), HttpStatus.OK)).orElseThrow(() -> new PersonNotFoundException("personne non retrouvé"));
+        // sans gérer les erreurs return person.map(value -> new ResponseEntity<>(person.get(), HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+
 
     }
 
@@ -47,7 +54,8 @@ public class PersonController {
             existingPerson.setCity(persondetails.getCity());
             return new ResponseEntity<>(personRepository.save(existingPerson), HttpStatus.OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        throw new PersonNotFoundException("personne non retrouvé");
+        // sans gérer les erreurs  return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("/{id}")
@@ -57,6 +65,6 @@ public class PersonController {
             personRepository.delete(person.get());
             return new ResponseEntity<>(HttpStatus.OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        throw  new PersonNotFoundException("personne non retrouvé");
     }
 }
